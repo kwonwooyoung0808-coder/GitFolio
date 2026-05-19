@@ -41,27 +41,27 @@ GitFolio는 개발자가 자신의 GitHub 저장소를 바탕으로 이력서용
 
 ### 1. 홈 화면
 
+![홈 화면](docs/screenshots/home.png)
+
 - 서비스 소개와 로그인 진입점 제공
 - GitFolio의 사용 목적과 전체 흐름을 첫 화면에서 확인 가능
 - GitHub 로그인 후 분석 흐름으로 자연스럽게 이동
 
-> 스크린샷 연결 경로 예시: `docs/screenshots/home.png`
-
 ### 2. 분석 시작 화면
+
+![분석 시작 화면](docs/screenshots/analyze.png)
 
 - GitHub 저장소 URL 입력
 - 분석 진행 상태를 SSE 기반으로 실시간 확인
 - 초안 생성 모드와 결과 흐름을 한 화면에서 확인 가능
 
-> 스크린샷 연결 경로 예시: `docs/screenshots/analyze.png`
-
 ### 3. 저장 이력 화면
+
+![저장 이력 화면](docs/screenshots/history.png)
 
 - 이전 분석 결과 목록 조회
 - 저장된 보고서 재열람
 - 결과 페이지로 이동해 초안, 기술 스택, 외부 AI 전달용 프롬프트를 다시 확인 가능
-
-> 스크린샷 연결 경로 예시: `docs/screenshots/history.png`
 
 ---
 
