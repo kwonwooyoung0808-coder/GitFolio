@@ -8,19 +8,16 @@ def generate_docx(report: dict, output_path) -> str:
     document.add_paragraph(report.get("repo", {}).get("description", ""))
 
     sections = [
-        ("Development Period", report.get("period", "")),
-        ("Team Scale", report.get("scale", "")),
-        ("Role", report.get("role", "")),
-        ("Tech Stack", ", ".join(report.get("tech_stack", []))),
-        ("Outcome and Learnings", report.get("outcome", "")),
+        ("주요 업무", report.get("main_task", "")),
+        ("담당 역할", report.get("role", "")),
+        ("기술 스택", ", ".join(report.get("tech_stack", []))),
+        ("업무 기간", report.get("period", "")),
+        ("개발 인원", report.get("scale", "")),
+        ("상세 내용", report.get("details", report.get("outcome", ""))),
     ]
     for title, value in sections:
         document.add_heading(title, level=2)
         document.add_paragraph(value)
-
-    document.add_heading("Key Implementation", level=2)
-    for item in report.get("implementation", []):
-        document.add_paragraph(item, style="List Bullet")
 
     document.save(str(output_path))
     return str(output_path)

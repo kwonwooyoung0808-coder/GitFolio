@@ -82,4 +82,8 @@
   .soft-badge {
     @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
   }
+
+  .anchor-offset {
+    scroll-margin-top: 8rem;
+  }
 }

@@ -7,28 +7,74 @@ CODE_PRIORITY_EXTENSIONS = {".py", ".ipynb", ".js", ".jsx", ".ts", ".tsx", ".jav
 LOW_PRIORITY_EXTENSIONS = {".csv", ".json", ".svg", ".png", ".jpg", ".jpeg", ".gif", ".lock"}
 EXCLUDED_KEY_FILE_EXTENSIONS = {".pkl", ".csv", ".png", ".jpg", ".jpeg", ".bin", ".zip", ".gif", ".ico"}
 
-FEATURE_KEYWORDS = {
-    "policy": "정책 기준에 따라 특정 입력이나 콘텐츠를 판별하는 기능이 포함되어 있습니다.",
-    "block": "위험하거나 허용되지 않는 입력을 차단하는 흐름이 포함되어 있습니다.",
-    "filter": "입력 데이터나 결과를 필터링하는 로직이 포함되어 있습니다.",
-    "moderation": "유해성 판별 또는 모더레이션 성격의 기능이 포함되어 있습니다.",
-    "prediction": "예측 모델 또는 추론 기능이 포함되어 있습니다.",
-    "classif": "분류 모델을 활용하는 기능이 포함되어 있습니다.",
-    "recommend": "추천 또는 개인화 로직이 포함되어 있습니다.",
-    "chat": "대화형 입력 또는 챗 인터페이스 기능이 포함되어 있습니다.",
-    "attendance": "관중 수요나 출석 데이터와 관련된 분석 기능이 포함되어 있습니다.",
-    "dashboard": "결과를 시각적으로 보여주는 대시보드 화면이 포함되어 있습니다.",
-    "streamlit": "브라우저에서 결과를 확인할 수 있는 Streamlit UI가 포함되어 있습니다.",
-    "fastapi": "API 서버 또는 백엔드 엔드포인트 구현이 포함되어 있습니다.",
-    "flask": "웹 서버 또는 백엔드 라우팅 구현이 포함되어 있습니다.",
-    "react": "컴포넌트 기반 프론트엔드 UI가 포함되어 있습니다.",
-}
+FEATURE_RULES = [
+    (
+        ["policy", "guard", "moderation", "filter", "block", "검증", "정책", "차단", "유해"],
+        "정책 기준에 따라 입력이나 결과를 검증하고 제어하는 흐름이 포함되어 있습니다.",
+    ),
+    (
+        ["predict", "prediction", "forecast", "classif", "recommend", "추천", "예측", "분류"],
+        "데이터를 기반으로 예측, 분류 또는 추천 결과를 생성하는 기능이 포함되어 있습니다.",
+    ),
+    (
+        ["chat", "chatbot", "conversation", "prompt", "대화", "챗봇"],
+        "대화형 입력이나 챗봇 상호작용 기능이 포함되어 있습니다.",
+    ),
+    (
+        ["dashboard", "admin", "monitor", "visual", "대시보드", "시각화", "모니터링"],
+        "처리 결과를 시각적으로 확인하거나 관리할 수 있는 화면 구성이 포함되어 있습니다.",
+    ),
+    (
+        ["route", "routing", "directions", "지도", "경로", "길찾기", "보행", "이동 지원", "교통약자"],
+        "지도 기반 경로 탐색이나 이동 지원 기능이 포함되어 있습니다.",
+    ),
+    (
+        ["map api", "geolocation", "kakao", "tmap", "leaflet", "postgis", "latitude", "longitude", "지도", "위치 정보"],
+        "지도 시각화, 위치 정보 조회 또는 공간 데이터 처리 기능이 포함되어 있습니다.",
+    ),
+    (
+        ["transit", "bus", "subway", "odsay", "대중교통", "버스", "지하철"],
+        "대중교통 경로 조회나 이동 편의 정보 연계 기능이 포함되어 있습니다.",
+    ),
+    (
+        ["elevator", "facility", "amenity", "accessible", "wheelchair", "편의시설", "엘리베이터", "교통약자"],
+        "접근성, 편의시설 또는 교통약자 지원 정보를 제공하는 기능이 포함되어 있습니다.",
+    ),
+    (
+        ["report", "incident", "alert", "realtime", "websocket", "socket", "supabase realtime", "신고", "실시간"],
+        "실시간 상태 반영이나 사용자 신고 처리 흐름이 포함되어 있습니다.",
+    ),
+    (
+        ["document", "parser", "ocr", "extract", "문서", "파싱", "추출"],
+        "문서나 외부 데이터를 파싱·정리하는 처리 흐름이 포함되어 있습니다.",
+    ),
+    (
+        ["fastapi", "flask", "django", "express", "router", "endpoint", "api"],
+        "백엔드 API 또는 서버 엔드포인트 구현이 포함되어 있습니다.",
+    ),
+    (
+        ["react", "vue", "next.js", "nextjs", "frontend", "ui", "screen", "화면", "인터페이스"],
+        "사용자 입력과 결과 확인을 위한 프론트엔드 화면 구성이 포함되어 있습니다.",
+    ),
+]
 
 TECH_STACK_PATTERNS = {
     "python": "Python",
+    "node.js": "Node.js",
+    "nodejs": "Node.js",
+    "node ": "Node.js",
+    "express": "Express",
     "java": "Java",
     "javascript": "JavaScript",
     "typescript": "TypeScript",
+    "sqlalchemy": "SQLAlchemy",
+    "jwt": "JWT",
+    "pyjwt": "JWT",
+    "jsonwebtoken": "JWT",
+    "yaml": "YAML",
+    "pyyaml": "YAML",
+    "pytest": "Pytest",
+    "docker compose": "Docker Compose",
     "react": "React",
     "vite": "Vite",
     "next.js": "Next.js",
@@ -39,6 +85,7 @@ TECH_STACK_PATTERNS = {
     "django": "Django",
     "pandas": "Pandas",
     "numpy": "NumPy",
+    "joblib": "joblib",
     "scikit-learn": "scikit-learn",
     "sklearn": "scikit-learn",
     "tensorflow": "TensorFlow",
@@ -50,11 +97,39 @@ TECH_STACK_PATTERNS = {
     "xgboost": "XGBoost",
     "lightgbm": "LightGBM",
     "mysql": "MySQL",
+    "mysql2": "MySQL",
     "postgresql": "PostgreSQL",
     "postgres": "PostgreSQL",
+    "pg": "PostgreSQL",
+    "postgis": "PostGIS",
     "sqlite": "SQLite",
     "mongodb": "MongoDB",
+    "supabase": "Supabase",
+    "axios": "Axios",
+    "react router": "React Router DOM",
+    "react-router-dom": "React Router DOM",
+    "framer motion": "Framer Motion",
+    "recharts": "Recharts",
+    "swiper": "Swiper",
+    "lucide react": "Lucide React",
+    "react markdown": "React Markdown",
+    "react-markdown": "React Markdown",
+    "gemini api": "Gemini API",
+    "@google/genai": "Gemini API",
+    "@google/generative-ai": "Gemini API",
+    "bcryptjs": "bcryptjs",
+    "multer": "Multer",
+    "cookie-parser": "cookie-parser",
+    "cors": "CORS",
+    "serverless-http": "serverless-http",
+    "kakao maps": "Kakao Maps API",
+    "kakao map": "Kakao Maps API",
+    "tmap api": "Tmap API",
+    "tmap": "Tmap API",
+    "odsay": "ODsay API",
+    "websocket": "WebSocket",
     "docker": "Docker",
+    "tailwindcss": "Tailwind CSS",
     "tailwind": "Tailwind CSS",
     "bootstrap": "Bootstrap",
     "selenium": "Selenium",
@@ -71,6 +146,85 @@ TECH_STACK_SECTION_NAMES = {
     "기술",
     "개발 환경",
 }
+
+CORE_TECH_STACKS = {
+    "Python",
+    "Node.js",
+    "Express",
+    "Java",
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Vite",
+    "Next.js",
+    "Streamlit",
+    "FastAPI",
+    "Flask",
+    "Django",
+    "Pandas",
+    "NumPy",
+    "joblib",
+    "scikit-learn",
+    "TensorFlow",
+    "PyTorch",
+    "OpenCV",
+    "Matplotlib",
+    "Seaborn",
+    "XGBoost",
+    "LightGBM",
+    "MySQL",
+    "PostgreSQL",
+    "PostGIS",
+    "SQLite",
+    "MongoDB",
+    "Supabase",
+    "Kakao Maps API",
+    "Tmap API",
+    "ODsay API",
+    "Gemini API",
+    "Docker",
+    "Tailwind CSS",
+    "Jupyter Notebook",
+}
+
+SECONDARY_TECH_STACKS = {
+    "SQLAlchemy",
+    "JWT",
+    "YAML",
+    "Pytest",
+    "Docker Compose",
+    "Axios",
+    "React Router DOM",
+    "Framer Motion",
+    "Recharts",
+    "Swiper",
+    "Lucide React",
+    "React Markdown",
+    "bcryptjs",
+    "Multer",
+    "cookie-parser",
+    "CORS",
+    "serverless-http",
+    "Selenium",
+}
+
+HIGH_VALUE_SECONDARY_TECH_STACKS = {
+    "SQLAlchemy",
+    "JWT",
+    "YAML",
+    "Pytest",
+    "Docker Compose",
+}
+
+
+def _pattern_in_text(pattern: str, text: str) -> bool:
+    lowered_pattern = pattern.lower()
+    lowered_text = text.lower()
+
+    if re.search(r"[a-z0-9]", lowered_pattern):
+        escaped = re.escape(lowered_pattern)
+        return re.search(rf"(?<![a-z0-9]){escaped}(?![a-z0-9])", lowered_text) is not None
+    return lowered_pattern in lowered_text
 
 
 def _short_patch_snippet(patch: str, max_lines: int = 3) -> str:
@@ -221,6 +375,12 @@ def infer_repo_profile(repo_info: dict, tree: list, file_contents: dict) -> dict
     structure = _summarize_structure(paths)
     features = _infer_features(paths, combined_text, file_contents)
     feature_highlights = _extract_feature_highlights(readme_text, features)
+    path_highlights = _extract_path_highlights(paths)
+    if path_highlights:
+        for item in path_highlights:
+            if item not in feature_highlights:
+                feature_highlights.append(item)
+        feature_highlights = feature_highlights[:5]
     tech_stack = _extract_tech_stack(repo_info, paths, file_contents, readme_text)
     key_paths = _pick_key_paths(paths)
     overview = _build_overview(summary_source, project_type, feature_highlights, features)
@@ -263,7 +423,7 @@ def _find_readme_text(file_contents: dict) -> str:
 
 def _extract_summary_from_readme(readme_text: str) -> str:
     lines = [_clean_markdown(line) for line in readme_text.splitlines()]
-    meaningful = [line for line in lines if line and len(line) > 8]
+    meaningful = [line for line in lines if line and len(line) > 8 and not _is_noise_line(line)]
     if not meaningful:
         return ""
 
@@ -292,16 +452,29 @@ def _extract_feature_highlights(readme_text: str, fallback_features: list) -> li
                     continue
                 if cleaned.startswith(("-", "*")):
                     cleaned = cleaned.lstrip("-* ").strip()
-                if len(cleaned) >= 8:
+                if len(cleaned) >= 8 and not _is_noise_line(cleaned):
                     highlights.append(cleaned)
             break
+
+    if not highlights:
+        table_rows = []
+        for raw_line in lines:
+            stripped = raw_line.strip()
+            if not stripped.startswith("|"):
+                continue
+            cleaned = _normalize_markdown_table_row(stripped)
+            if cleaned:
+                table_rows.append(cleaned)
+        highlights = table_rows[:4]
 
     if not highlights:
         bullet_lines = []
         for raw_line in lines:
             stripped = raw_line.strip()
             if stripped.startswith(("- ", "* ")) and len(stripped) > 8:
-                bullet_lines.append(_clean_markdown(stripped[2:]))
+                cleaned = _clean_markdown(stripped[2:])
+                if not _is_noise_line(cleaned):
+                    bullet_lines.append(cleaned)
         highlights = bullet_lines[:4]
 
     if not highlights:
@@ -314,24 +487,60 @@ def _extract_feature_highlights(readme_text: str, fallback_features: list) -> li
     return deduped[:5]
 
 
+def _extract_path_highlights(paths: list) -> list:
+    highlights = []
+    lowered_paths = [path.lower() for path in paths]
+
+    path_rules = [
+        (["ocr"], "건강검진 파일이나 문서 이미지에서 OCR 기반으로 데이터를 추출"),
+        (["report"], "분석 결과를 사용자 리포트 형태로 정리하고 저장"),
+        (["chatbot", "chat"], "건강 상담 챗봇 또는 대화형 상담 기능을 제공"),
+        (["upload"], "사용자 파일 업로드와 분석 요청 흐름을 처리"),
+        (["dashboard", "mypage"], "대시보드나 마이페이지에서 건강 이력과 결과를 조회"),
+        (["health", "score", "organ"], "건강 점수나 지표를 시각화하고 상태를 보여줌"),
+        (["action", "plan"], "개인 맞춤형 액션 플랜이나 추천 항목을 생성"),
+        (["guest"], "회원 외 게스트 사용자를 위한 분석 흐름을 제공"),
+        (["limit", "quota"], "분석 횟수 제한이나 사용량 제어 로직을 포함"),
+        (["gemini", "openai", "anthropic", "llm", "ai"], "AI 모델을 활용한 분석 또는 응답 생성 기능을 연동"),
+        (["context", "language"], "다국어 지원이나 전역 상태 관리 흐름을 포함"),
+    ]
+
+    for patterns, sentence in path_rules:
+        if any(any(pattern in path for pattern in patterns) for path in lowered_paths):
+            highlights.append(sentence)
+
+    return _dedupe_preserve_order(highlights)[:5]
+
+
 def _extract_tech_stack(repo_info: dict, paths: list, file_contents: dict, readme_text: str) -> list:
     stack = []
 
-    if repo_info.get("language"):
-        stack.append(repo_info["language"])
+    readme_stack = _extract_tech_stack_from_readme(readme_text)
+    stack.extend(readme_stack)
 
-    stack.extend(_extract_tech_stack_from_readme(readme_text))
+    manifest_stack = _extract_tech_stack_from_manifests(file_contents)
+    stack.extend(manifest_stack)
 
     combined = "\n".join(file_contents.values()).lower()
     for pattern, label in TECH_STACK_PATTERNS.items():
-        if pattern in combined:
+        if _pattern_in_text(pattern, combined):
             stack.append(label)
 
     lower_paths = [path.lower() for path in paths]
     if any(path.endswith(".ipynb") for path in lower_paths):
         stack.append("Jupyter Notebook")
 
-    return _dedupe_preserve_order(stack)
+    stack.extend(_extract_tech_stack_from_paths(lower_paths))
+
+    stack = _finalize_tech_stack(stack)
+
+    if not stack:
+        repo_language = repo_info.get("language")
+        if repo_language:
+            normalized_language = TECH_STACK_PATTERNS.get(repo_language.lower(), repo_language)
+            stack.append(normalized_language)
+
+    return stack
 
 
 def _extract_tech_stack_from_readme(readme_text: str) -> list:
@@ -374,12 +583,105 @@ def _extract_tech_stack_from_readme(readme_text: str) -> list:
         lower = token.lower()
         mapped = None
         for pattern, label in TECH_STACK_PATTERNS.items():
-            if pattern in lower:
+            if _pattern_in_text(pattern, lower):
                 mapped = label
                 break
         normalized.append(mapped or token)
 
     return _dedupe_preserve_order(normalized)
+
+
+def _finalize_tech_stack(stack: list[str]) -> list[str]:
+    stack = _dedupe_preserve_order(stack)
+
+    if "TypeScript" in stack and "JavaScript" in stack:
+        stack = [item for item in stack if item != "JavaScript"]
+
+    core_stack = [item for item in stack if item in CORE_TECH_STACKS]
+    secondary_stack = [item for item in stack if item in SECONDARY_TECH_STACKS]
+
+    if len(core_stack) >= 8:
+        return core_stack[:10]
+
+    if len(core_stack) >= 6:
+        prioritized_secondary = [item for item in secondary_stack if item in HIGH_VALUE_SECONDARY_TECH_STACKS]
+        return (core_stack + prioritized_secondary)[:10]
+
+    if len(core_stack) >= 4:
+        prioritized_secondary = [item for item in secondary_stack if item in HIGH_VALUE_SECONDARY_TECH_STACKS]
+        return (core_stack + prioritized_secondary[:2])[:10]
+
+    return (core_stack + secondary_stack[:4])[:10]
+
+
+def _extract_tech_stack_from_manifests(file_contents: dict) -> list:
+    stack = []
+
+    for path, content in file_contents.items():
+        lowered_path = path.lower()
+        lowered_content = content.lower()
+
+        if lowered_path.endswith("package.json"):
+            try:
+                package_json = json.loads(content)
+            except Exception:
+                package_json = {}
+
+            dependency_sections = [
+                package_json.get("dependencies", {}),
+                package_json.get("devDependencies", {}),
+                package_json.get("peerDependencies", {}),
+            ]
+            for section in dependency_sections:
+                if not isinstance(section, dict):
+                    continue
+                for dependency_name in section.keys():
+                    dependency_lower = dependency_name.lower()
+                    for pattern, label in TECH_STACK_PATTERNS.items():
+                        if _pattern_in_text(pattern, dependency_lower):
+                            stack.append(label)
+
+        if lowered_path.endswith("requirements.txt"):
+            for line in content.splitlines():
+                package_name = line.strip().lower()
+                if not package_name or package_name.startswith("#"):
+                    continue
+                package_name = re.split(r"[<>=~!]", package_name)[0].strip()
+                for pattern, label in TECH_STACK_PATTERNS.items():
+                    if _pattern_in_text(pattern, package_name):
+                        stack.append(label)
+
+        if lowered_path.endswith((".py", ".ipynb", ".js", ".jsx", ".ts", ".tsx")):
+            for pattern, label in TECH_STACK_PATTERNS.items():
+                if _pattern_in_text(pattern, lowered_content):
+                    stack.append(label)
+
+    return _dedupe_preserve_order(stack)
+
+
+def _extract_tech_stack_from_paths(lower_paths: list[str]) -> list:
+    stack = []
+
+    path_rules = [
+        (".py", "Python"),
+        ("tsconfig.json", "TypeScript"),
+        ("vite.config", "Vite"),
+        ("tailwind.config", "Tailwind CSS"),
+        ("docker-compose", "Docker Compose"),
+        ("dockerfile", "Docker"),
+        ("streamlit", "Streamlit"),
+        ("requirements.txt", "Python"),
+        ("package.json", "Node.js"),
+        (".tsx", "React"),
+        (".jsx", "React"),
+    ]
+
+    for lowered_path in lower_paths:
+        for token, label in path_rules:
+            if token in lowered_path:
+                stack.append(label)
+
+    return _dedupe_preserve_order(stack)
 
 
 def _summarize_structure(paths: list) -> list:
@@ -396,8 +698,8 @@ def _summarize_structure(paths: list) -> list:
 def _infer_features(paths: list, combined_text: str, file_contents: dict) -> list:
     features = []
 
-    for keyword, sentence in FEATURE_KEYWORDS.items():
-        if keyword in combined_text and sentence not in features:
+    for patterns, sentence in FEATURE_RULES:
+        if any(_pattern_in_text(pattern, combined_text) for pattern in patterns) and sentence not in features:
             features.append(sentence)
 
     if any(path.lower().endswith(".ipynb") for path in paths):
@@ -408,6 +710,16 @@ def _infer_features(paths: list, combined_text: str, file_contents: dict) -> lis
         features.append("분석용 데이터셋이나 전처리 결과물이 저장소에 포함되어 있습니다.")
     if "streamlit" in _find_content_by_suffix(file_contents, "requirements.txt").lower():
         features.append("브라우저에서 예측 결과를 확인할 수 있는 Streamlit 화면 구성이 포함되어 있습니다.")
+    if "jwt" in combined_text or "authorization" in combined_text or "bearer" in combined_text:
+        features.append("JWT 또는 토큰 기반 인증 흐름이 구현되어 있습니다.")
+    if "sqlalchemy" in combined_text:
+        features.append("SQLAlchemy 기반 데이터 모델과 데이터베이스 연동 구성이 포함되어 있습니다.")
+    if "pytest" in combined_text or any("test" in path.lower() for path in paths):
+        features.append("단위 테스트 또는 검증용 테스트 코드가 포함되어 있습니다.")
+    if "docker" in combined_text or any("docker" in path.lower() for path in paths):
+        features.append("Docker 기반 개발 또는 실행 환경 구성이 포함되어 있습니다.")
+    if "health" in combined_text:
+        features.append("시스템 상태를 점검하기 위한 헬스체크 또는 상태 확인 기능이 포함되어 있습니다.")
 
     return _dedupe_preserve_order(features)[:8]
 
@@ -446,11 +758,79 @@ def _build_overview(summary_source: str, project_type: str, feature_highlights: 
 
 
 def _clean_markdown(text: str) -> str:
+    stripped = text.strip()
+    if stripped.startswith("|"):
+        normalized = _normalize_markdown_table_row(stripped)
+        if normalized:
+            return normalized
+        return ""
+
     cleaned = re.sub(r"`+", "", text)
     cleaned = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", cleaned)
     cleaned = re.sub(r"[*_>#-]+", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned)
     return cleaned.strip()
+
+
+def _normalize_markdown_table_row(text: str) -> str:
+    stripped = text.strip()
+    if not stripped.startswith("|"):
+        return ""
+    if re.fullmatch(r"\|?[\s:\-]+\|[\s:\-\|]*", stripped):
+        return ""
+
+    cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+    cells = [cell for cell in cells if cell]
+    if len(cells) < 2:
+        return ""
+    if cells[0] in {"기능", "항목", "구분", "설명"}:
+        return ""
+
+    left = _clean_markdown(cells[0])
+    right = _clean_markdown(cells[1])
+    if not left or not right:
+        return ""
+    return f"{left}: {right}"
+
+
+def _is_noise_line(text: str) -> bool:
+    lowered = text.lower().strip()
+    if not lowered:
+        return True
+
+    noisy_tokens = (
+        "install",
+        "installation",
+        "usage",
+        "getting started",
+        "quick start",
+        "requirements",
+        "environment",
+        "setup",
+        "run",
+        "npm install",
+        "pip install",
+        "docker compose",
+        "uvicorn",
+        "localhost",
+        "port ",
+        "python 3.",
+        "node ",
+        "실행",
+        "설치",
+        "환경",
+        "사용법",
+        "시작하기",
+        "포트",
+        "권장",
+    )
+    if any(token in lowered for token in noisy_tokens):
+        return True
+
+    if re.match(r"^(readme|todo|note)\b", lowered):
+        return True
+
+    return False
 
 
 def _dedupe_preserve_order(items: list) -> list:

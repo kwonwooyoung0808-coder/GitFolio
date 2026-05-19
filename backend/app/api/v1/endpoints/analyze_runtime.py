@@ -78,23 +78,73 @@ async def analyze_stream(
             yield sse_event("status", "Analyzing changed files and diffs.")
             diffs = await gh.get_diffs(repo_url, my_commits)
             diff_summary = summarize_diffs(diffs)
+            all_changed_files = [file for diff in diffs for file in diff.get("files", [])]
 
             yield sse_event("status", "Inspecting repository structure and key files.")
             repo_tree = await gh.get_repo_tree(repo_url, repo_info.get("default_branch"))
             tree_paths = [item["path"] for item in repo_tree if item.get("type") == "blob"]
-            key_file_candidates = ["README.md", "package.json", "requirements.txt", "app.py", "main.py"]
+            key_file_candidates = [
+                "README.md",
+                "package.json",
+                "requirements.txt",
+                "app.py",
+                "main.py",
+                "Dockerfile",
+                "docker-compose.yml",
+                "docker-compose.yaml",
+            ]
+            for item in diff_summary.get("top_files", [])[:12]:
+                filename = item.get("filename")
+                if filename:
+                    key_file_candidates.append(filename)
+
             for path in tree_paths:
                 lowered = path.lower()
-                if lowered.endswith(("app.py", "main.py", "package.json", "requirements.txt", "readme.md", ".ipynb")):
+                if lowered.endswith(
+                    (
+                        "app.py",
+                        "main.py",
+                        "package.json",
+                        "requirements.txt",
+                        "readme.md",
+                        ".ipynb",
+                        "dockerfile",
+                        "docker-compose.yml",
+                        "docker-compose.yaml",
+                    )
+                ):
                     key_file_candidates.append(path)
                 if any(
                     token in lowered
-                    for token in ["policy", "filter", "block", "predict", "train", "dashboard", "streamlit"]
+                    for token in [
+                        "policy",
+                        "filter",
+                        "block",
+                        "predict",
+                        "train",
+                        "dashboard",
+                        "streamlit",
+                        "auth",
+                        "jwt",
+                        "test",
+                        "ocr",
+                        "report",
+                        "chat",
+                        "upload",
+                        "health",
+                        "score",
+                        "guest",
+                        "limit",
+                        "action",
+                        "gemini",
+                        "mypass",
+                        "mypage",
+                    ]
                 ):
                     key_file_candidates.append(path)
 
             file_contents = {}
-            for path in list(dict.fromkeys(key_file_candidates))[:15]:
+            for path in list(dict.fromkeys(key_file_candidates))[:25]:
                 try:
                     file_contents[path] = await gh.get_file_content(repo_url, path)
                 except Exception:
@@ -102,7 +152,6 @@ async def analyze_stream(
             repo_profile = infer_repo_profile(repo_info, repo_tree, file_contents)
 
             yield sse_event("status", "Reviewing key files for project context.")
-            all_changed_files = [file for diff in diffs for file in diff.get("files", [])]
             key_files = select_key_files(all_changed_files)
             llm_file_contents = {}
             for file_path in key_files:
@@ -140,7 +189,7 @@ async def analyze_stream(
                 try:
                     claude_client = ClaudeClient()
                     llm_text = await claude_client.generate(prompt)
-                    report_content = format_local_llm_report(llm_text, repo_info, diff_summary, prompt)
+                    report_content = format_local_llm_report(llm_text, repo_info, diff_summary, prompt, repo_profile)
                     report_content["mode"] = "cloud-llm"
                     yield sse_event("status", "Cloud LLM draft generation completed.")
                 except Exception:
@@ -151,7 +200,7 @@ async def analyze_stream(
                 try:
                     ollama_client = OllamaClient()
                     llm_text = await ollama_client.generate(prompt)
-                    report_content = format_local_llm_report(llm_text, repo_info, diff_summary, prompt)
+                    report_content = format_local_llm_report(llm_text, repo_info, diff_summary, prompt, repo_profile)
                     yield sse_event("status", "Local LLM draft generation completed.")
                 except Exception:
                     yield sse_event("status", "Local LLM was unavailable, so GitFolio is falling back to rule-based draft generation.")
