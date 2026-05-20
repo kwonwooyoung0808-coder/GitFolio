@@ -39,7 +39,9 @@ async def get_reports(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    user = _get_user(db, current_user["github_id"])
+    user = db.query(User).filter(User.github_id == str(current_user["github_id"])).first()
+    if not user:
+        return {"reports": []}
     requests = (
         db.query(AnalysisRequest)
         .filter(AnalysisRequest.user_id == user.id)

@@ -126,22 +126,10 @@ def format_local_llm_report(raw_text: str, repo_info: dict, commit_summary: dict
     sections = _extract_sections(sanitized_text)
 
     project_name = _normalize_project_name("", repo_info)
-    main_task = _clean_main_task(sections.get("main_task", "").strip()) or _build_main_task(repo_profile)
+    main_task = _build_main_task(repo_profile)
     role = _normalize_role(sections.get("role", ""))
-    tech_stack_items = _clean_tech_stack_items(
-        re.split(r"[,/\n]", sections.get("tech_stack", "")) if sections.get("tech_stack") else []
-    )
-    profile_tech_stack = _build_tech_stack(repo_info, repo_profile)
-    if not tech_stack_items or len(tech_stack_items) < 4:
-        tech_stack_items = profile_tech_stack
-    elif len(profile_tech_stack) > len(tech_stack_items):
-        overlap = len({item.lower() for item in tech_stack_items} & {item.lower() for item in profile_tech_stack})
-        if overlap <= max(1, len(tech_stack_items) // 2):
-            tech_stack_items = profile_tech_stack
-    if not tech_stack_items:
-        tech_stack_items = _build_tech_stack(repo_info, repo_profile)
-
-    details = _clean_details_text(sections.get("details", "").strip()) or _build_details(commit_summary, repo_profile)
+    tech_stack_items = _build_tech_stack(repo_info, repo_profile)
+    details = _build_details(commit_summary, repo_profile)
     summary = repo_profile.get("overview") or _build_overview(repo_info, repo_profile)
 
     report = {
@@ -355,12 +343,81 @@ def _build_resume_text(report: dict) -> str:
     return "\n".join(lines).strip()
 
 
+def _summary_to_main_task(summary_source: str) -> str:
+    text = str(summary_source).strip()
+    if not text:
+        return ""
+
+    text = re.sub(r"https?://\S+", "", text)
+    text = re.sub(r"^\S+는\s+", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"(입니다|입니다\.)$", "", text)
+    text = text.replace("바탕으로", "기반으로")
+
+    if "기반으로" in text:
+        base, objective = text.split("기반으로", 1)
+        base = re.sub(r"(개발자가 자신의|사용자가 자신의|사용자가|개발자가)\s+", "", base).strip()
+        base = re.sub(r"[을를]\s*$", "", base).strip()
+        objective = re.sub(r"할 수 있도록 만든\s*", "", objective).strip()
+        objective = re.sub(r"(서비스|플랫폼|웹 서비스|웹앱|애플리케이션)\s*$", "", objective).strip()
+        objective = re.sub(r"\b빠르게\s*", "", objective).strip()
+        if "문장" in objective and any(token in objective for token in ["정리", "생성", "초안"]):
+            objective = "이력서 초안 자동 생성"
+        if "저장소" in base and "분석" not in base:
+            base = base + " 분석"
+        if base and objective:
+            return f"{base} 기반 {objective} 서비스 개발"
+
+    text = re.sub(r"(서비스|플랫폼|웹 서비스|웹앱|애플리케이션)\s*$", "", text).strip()
+
+    if not text:
+        return ""
+    if "개발" in text:
+        return text
+    return text + " 서비스 개발"
+
+
+def _summary_to_detail_sentence(summary_source: str) -> str:
+    text = str(summary_source).strip()
+    if not text:
+        return ""
+
+    text = re.sub(r"https?://\S+", "", text)
+    text = re.sub(r"^\S+는\s+", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"(입니다|입니다\.)$", "", text).strip()
+    text = text.replace("바탕으로", "기반으로")
+
+    if "기반으로" in text:
+        base, objective = text.split("기반으로", 1)
+        base = re.sub(r"(개발자가 자신의|사용자가 자신의|사용자가|개발자가)\s+", "", base).strip()
+        base = re.sub(r"[을를]\s*$", "", base).strip()
+        objective = re.sub(r"할 수 있도록 만든\s*", "", objective).strip()
+        objective = re.sub(r"(서비스|플랫폼|웹 서비스|웹앱|애플리케이션)\s*$", "", objective).strip()
+        objective = re.sub(r"\b빠르게\s*", "", objective).strip()
+        if "문장" in objective and any(token in objective for token in ["정리", "생성", "초안"]):
+            objective = "이력서 초안 자동 생성"
+        if "저장소" in base and "분석" not in base:
+            base = base + " 분석"
+        if base and objective:
+            return f"{base} 기반 {objective} 서비스를 구현하였습니다."
+
+    if not text:
+        return ""
+    return text + " 서비스를 구현하였습니다."
+
+
 def _build_main_task(repo_profile: dict) -> str:
     project_type = repo_profile.get("project_type", "프로젝트")
+    summary_source = repo_profile.get("summary_source", "")
     features = repo_profile.get("feature_highlights", []) or repo_profile.get("features", [])
     features_text = " ".join(features)
     tech_stack = " ".join(repo_profile.get("tech_stack", []))
     concrete_highlights = _get_concrete_feature_highlights(repo_profile)
+
+    summary_task = _summary_to_main_task(summary_source)
+    if summary_task:
+        return summary_task
 
     if concrete_highlights:
         task_phrases = []
@@ -424,11 +481,16 @@ def _build_main_task(repo_profile: dict) -> str:
 
 
 def _build_details(commit_summary: dict, repo_profile: dict) -> str:
+    summary_source = repo_profile.get("summary_source", "")
     features = repo_profile.get("feature_highlights", []) + repo_profile.get("features", [])
     features_text = " ".join(features)
     tech_stack = repo_profile.get("tech_stack", [])
     sentences = []
     concrete_highlights = _get_concrete_feature_highlights(repo_profile)
+
+    summary_sentence = _summary_to_detail_sentence(summary_source)
+    if summary_sentence:
+        sentences.append(summary_sentence)
 
     top_file_names = [item.get("filename", "").lower() for item in commit_summary.get("top_files", [])]
     has_api = "FastAPI" in tech_stack or any("router" in path or "api" in path for path in top_file_names)

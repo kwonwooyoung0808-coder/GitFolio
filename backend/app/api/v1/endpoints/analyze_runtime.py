@@ -100,6 +100,22 @@ async def analyze_stream(
 
             for path in tree_paths:
                 lowered = path.lower()
+                if any(
+                    token in lowered
+                    for token in [
+                        "/tests/",
+                        "test_",
+                        "__tests__",
+                        "/docs/",
+                        "generated_reports/",
+                        "/screenshots/",
+                        ".png",
+                        ".jpg",
+                        ".jpeg",
+                        ".gif",
+                    ]
+                ):
+                    continue
                 if lowered.endswith(
                     (
                         "app.py",
@@ -126,7 +142,6 @@ async def analyze_stream(
                         "streamlit",
                         "auth",
                         "jwt",
-                        "test",
                         "ocr",
                         "report",
                         "chat",

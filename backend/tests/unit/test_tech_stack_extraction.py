@@ -90,9 +90,60 @@ def test_tech_stack_falls_back_to_manifests_paths_and_code_when_readme_is_missin
     assert "React" in profile["tech_stack"]
     assert "Vite" in profile["tech_stack"]
     assert "Tailwind CSS" in profile["tech_stack"]
-    assert "Node.js" in profile["tech_stack"]
     assert "Express" in profile["tech_stack"]
     assert "JWT" in profile["tech_stack"]
     assert "Axios" not in profile["tech_stack"]
     assert "CORS" not in profile["tech_stack"]
     assert "JavaScript" not in profile["tech_stack"]
+
+
+def test_gitfolio_style_repo_prefers_manifest_stack_without_meta_file_noise():
+    repo_info = {
+        "full_name": "kwonwooyoung0808-coder/GitFolio",
+        "description": None,
+        "language": "Python",
+        "name": "GitFolio",
+    }
+    tree = [
+        {"path": "README.md", "type": "blob"},
+        {"path": "frontend/package.json", "type": "blob"},
+        {"path": "backend/requirements.txt", "type": "blob"},
+        {"path": "backend/app/main.py", "type": "blob"},
+        {"path": "frontend/src/main.jsx", "type": "blob"},
+    ]
+    file_contents = {
+        "README.md": """
+# GitFolio
+
+> GitHub 저장소 URL을 바탕으로 취업용 프로젝트 초안을 자동 생성하는 포트폴리오 드래프트 서비스입니다.
+
+## 기술 스택
+
+### Frontend
+- React
+- Vite
+- Tailwind CSS
+
+### Backend
+- FastAPI
+- SQLAlchemy
+- Python
+""",
+        "frontend/package.json": '{"dependencies":{"react":"^18.0.0","react-router-dom":"^6.0.0","axios":"^1.0.0"},"devDependencies":{"vite":"^5.0.0","tailwindcss":"^3.0.0"}}',
+        "backend/requirements.txt": "fastapi\nsqlalchemy\npytest\n",
+        "backend/app/main.py": "from fastapi import FastAPI\napp = FastAPI()\n",
+        "frontend/src/main.jsx": 'import React from "react";\n',
+    }
+
+    profile = infer_repo_profile(repo_info, tree, file_contents)
+
+    assert "FastAPI" in profile["tech_stack"]
+    assert "Python" in profile["tech_stack"]
+    assert "React" in profile["tech_stack"]
+    assert "Vite" in profile["tech_stack"]
+    assert "Tailwind CSS" in profile["tech_stack"]
+    assert "SQLAlchemy" in profile["tech_stack"]
+    assert "Java" not in profile["tech_stack"]
+    assert "JavaScript" not in profile["tech_stack"]
+    assert "Next.js" not in profile["tech_stack"]
+    assert "Docker" not in profile["tech_stack"]

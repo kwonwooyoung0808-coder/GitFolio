@@ -135,6 +135,12 @@ TECH_STACK_PATTERNS = {
     "selenium": "Selenium",
 }
 
+SORTED_TECH_STACK_PATTERNS = sorted(
+    TECH_STACK_PATTERNS.items(),
+    key=lambda item: len(item[0]),
+    reverse=True,
+)
+
 TECH_STACK_SECTION_NAMES = {
     "tech stack",
     "stack",
@@ -216,6 +222,47 @@ HIGH_VALUE_SECONDARY_TECH_STACKS = {
     "Docker Compose",
 }
 
+TECH_STACK_PRIORITY = [
+    "Python",
+    "FastAPI",
+    "Flask",
+    "Django",
+    "Streamlit",
+    "Pandas",
+    "NumPy",
+    "scikit-learn",
+    "TensorFlow",
+    "PyTorch",
+    "XGBoost",
+    "LightGBM",
+    "OpenCV",
+    "Matplotlib",
+    "Seaborn",
+    "React",
+    "TypeScript",
+    "JavaScript",
+    "Vite",
+    "Next.js",
+    "Node.js",
+    "Express",
+    "Tailwind CSS",
+    "MySQL",
+    "PostgreSQL",
+    "PostGIS",
+    "SQLite",
+    "MongoDB",
+    "Supabase",
+    "SQLAlchemy",
+    "JWT",
+    "Pytest",
+    "Docker",
+    "Docker Compose",
+    "Gemini API",
+    "Kakao Maps API",
+    "Tmap API",
+    "ODsay API",
+]
+
 
 def _pattern_in_text(pattern: str, text: str) -> bool:
     lowered_pattern = pattern.lower()
@@ -225,6 +272,44 @@ def _pattern_in_text(pattern: str, text: str) -> bool:
         escaped = re.escape(lowered_pattern)
         return re.search(rf"(?<![a-z0-9]){escaped}(?![a-z0-9])", lowered_text) is not None
     return lowered_pattern in lowered_text
+
+
+def _normalize_stack_token(token: str) -> str | None:
+    lowered = token.lower().strip()
+    if not lowered:
+        return None
+
+    for pattern, label in SORTED_TECH_STACK_PATTERNS:
+        if _pattern_in_text(pattern, lowered):
+            return label
+    return None
+
+
+def _extract_source_imports(content: str, lowered_path: str) -> list[str]:
+    imports = []
+
+    if lowered_path.endswith((".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")):
+        patterns = [
+            r'import\s+.*?\s+from\s+[\'"]([^\'"]+)[\'"]',
+            r'import\s+[\'"]([^\'"]+)[\'"]',
+            r'require\([\'"]([^\'"]+)[\'"]\)',
+        ]
+        for pattern in patterns:
+            imports.extend(re.findall(pattern, content))
+    elif lowered_path.endswith(".py"):
+        patterns = [
+            r'^\s*import\s+([a-zA-Z0-9_\.]+)',
+            r'^\s*from\s+([a-zA-Z0-9_\.]+)\s+import\s+',
+        ]
+        for pattern in patterns:
+            imports.extend(re.findall(pattern, content, flags=re.MULTILINE))
+
+    normalized = []
+    for item in imports:
+        token = item.split(".")[0].strip()
+        if token:
+            normalized.append(token)
+    return normalized
 
 
 def _short_patch_snippet(patch: str, max_lines: int = 3) -> str:
@@ -375,6 +460,13 @@ def infer_repo_profile(repo_info: dict, tree: list, file_contents: dict) -> dict
     structure = _summarize_structure(paths)
     features = _infer_features(paths, combined_text, file_contents)
     feature_highlights = _extract_feature_highlights(readme_text, features)
+    file_evidence_highlights = _extract_file_evidence_highlights(paths, file_contents)
+    if file_evidence_highlights:
+        merged_highlights = []
+        for item in file_evidence_highlights + feature_highlights:
+            if item not in merged_highlights:
+                merged_highlights.append(item)
+        feature_highlights = merged_highlights[:5]
     path_highlights = _extract_path_highlights(paths)
     if path_highlights:
         for item in path_highlights:
@@ -422,18 +514,36 @@ def _find_readme_text(file_contents: dict) -> str:
 
 
 def _extract_summary_from_readme(readme_text: str) -> str:
-    lines = [_clean_markdown(line) for line in readme_text.splitlines()]
-    meaningful = [line for line in lines if line and len(line) > 8 and not _is_noise_line(line)]
-    if not meaningful:
-        return ""
+    lines = readme_text.splitlines()
+    paragraph = []
+    collecting = False
 
-    selected = []
-    for line in meaningful[:6]:
-        selected.append(line)
-        joined = " ".join(selected)
-        if len(joined) > 180:
+    for raw_line in lines:
+        stripped = raw_line.strip()
+        if not stripped:
+            if collecting and paragraph:
+                break
+            continue
+        if stripped.startswith("#"):
+            continue
+        if stripped.startswith("!"):
+            continue
+
+        cleaned = _clean_markdown(stripped.lstrip("> ").strip())
+        if not cleaned or _is_noise_line(cleaned):
+            continue
+        if re.match(r"^\d+\.\s", cleaned):
+            continue
+        lowered_cleaned = cleaned.lower()
+        if any(token in lowered_cleaned for token in ["readme", "package.json", "requirements.txt", "커밋", "commit", "프롬프트", "diff"]):
+            continue
+
+        collecting = True
+        paragraph.append(cleaned)
+        if len(" ".join(paragraph)) > 220:
             break
-    return " ".join(selected)[:220]
+
+    return " ".join(paragraph)[:220]
 
 
 def _extract_feature_highlights(readme_text: str, fallback_features: list) -> list:
@@ -482,8 +592,9 @@ def _extract_feature_highlights(readme_text: str, fallback_features: list) -> li
 
     deduped = []
     for item in highlights:
-        if item and item not in deduped:
-            deduped.append(item)
+        cleaned = re.sub(r"^\d+\.\s*", "", item).strip()
+        if cleaned and cleaned not in deduped:
+            deduped.append(cleaned)
     return deduped[:5]
 
 
@@ -492,22 +603,59 @@ def _extract_path_highlights(paths: list) -> list:
     lowered_paths = [path.lower() for path in paths]
 
     path_rules = [
-        (["ocr"], "건강검진 파일이나 문서 이미지에서 OCR 기반으로 데이터를 추출"),
-        (["report"], "분석 결과를 사용자 리포트 형태로 정리하고 저장"),
-        (["chatbot", "chat"], "건강 상담 챗봇 또는 대화형 상담 기능을 제공"),
-        (["upload"], "사용자 파일 업로드와 분석 요청 흐름을 처리"),
-        (["dashboard", "mypage"], "대시보드나 마이페이지에서 건강 이력과 결과를 조회"),
-        (["health", "score", "organ"], "건강 점수나 지표를 시각화하고 상태를 보여줌"),
-        (["action", "plan"], "개인 맞춤형 액션 플랜이나 추천 항목을 생성"),
-        (["guest"], "회원 외 게스트 사용자를 위한 분석 흐름을 제공"),
-        (["limit", "quota"], "분석 횟수 제한이나 사용량 제어 로직을 포함"),
-        (["gemini", "openai", "anthropic", "llm", "ai"], "AI 모델을 활용한 분석 또는 응답 생성 기능을 연동"),
-        (["context", "language"], "다국어 지원이나 전역 상태 관리 흐름을 포함"),
+        (["ocr"], "문서 이미지에서 OCR 기반으로 데이터를 추출"),
+        (["report"], "분석 결과를 리포트 형태로 정리하고 저장"),
+        (["chatbot", "chat"], "챗봇 또는 대화형 상담 기능을 제공"),
+        (["upload"], "파일 업로드와 분석 요청 흐름을 처리"),
+        (["dashboard", "mypage"], "대시보드나 마이페이지에서 결과를 조회"),
+        (["gemini", "openai", "anthropic", "llm", "ai"], "AI 모델을 연동해 분석 또는 응답 생성 기능을 제공"),
+        (["context", "language"], "상태 관리 흐름을 포함"),
     ]
 
     for patterns, sentence in path_rules:
         if any(any(pattern in path for pattern in patterns) for path in lowered_paths):
             highlights.append(sentence)
+
+    return _dedupe_preserve_order(highlights)[:5]
+
+
+def _extract_file_evidence_highlights(paths: list, file_contents: dict) -> list:
+    highlights = []
+    lowered_paths = [path.lower() for path in paths]
+    evidence_text = "\n".join(
+        [path.lower() for path in paths] + [content.lower() for content in file_contents.values()]
+    )
+
+    model_labels = [
+        ("gru", "GRU"),
+        ("lstm", "LSTM"),
+        ("rnn", "RNN"),
+        ("transformer", "Transformer"),
+        ("cnn", "CNN"),
+    ]
+    for token, label in model_labels:
+        if any(token in path for path in lowered_paths):
+            if any(keyword in evidence_text for keyword in ["predict", "prediction", "forecast", "예측", "수요", "분류"]):
+                highlights.append(f"{label} 기반 예측 모델을 구성")
+            else:
+                highlights.append(f"{label} 기반 모델 학습 파이프라인을 구성")
+            break
+
+    if any("streamlit" in path for path in lowered_paths) or "streamlit" in evidence_text:
+        if any(keyword in evidence_text for keyword in ["predict", "prediction", "forecast", "예측", "분류", "recommend", "추천"]):
+            highlights.append("Streamlit 기반 예측 결과 확인 및 시각화 화면 제공")
+        else:
+            highlights.append("Streamlit 기반 사용자 화면 제공")
+
+    if any(keyword in evidence_text for keyword in ["predict", "prediction", "forecast", "예측", "demand", "수요"]):
+        highlights.append("데이터 기반 예측 기능 구현")
+    elif any(keyword in evidence_text for keyword in ["classif", "분류"]):
+        highlights.append("데이터 분류 기능 구현")
+    elif any(keyword in evidence_text for keyword in ["recommend", "추천"]):
+        highlights.append("추천 기능 구현")
+
+    if any(keyword in evidence_text for keyword in ["matplotlib", "seaborn", "plot", "chart", "visual", "시각화", "graph"]):
+        highlights.append("예측 결과 및 데이터 시각화 구성")
 
     return _dedupe_preserve_order(highlights)[:5]
 
@@ -520,11 +668,6 @@ def _extract_tech_stack(repo_info: dict, paths: list, file_contents: dict, readm
 
     manifest_stack = _extract_tech_stack_from_manifests(file_contents)
     stack.extend(manifest_stack)
-
-    combined = "\n".join(file_contents.values()).lower()
-    for pattern, label in TECH_STACK_PATTERNS.items():
-        if _pattern_in_text(pattern, combined):
-            stack.append(label)
 
     lower_paths = [path.lower() for path in paths]
     if any(path.endswith(".ipynb") for path in lower_paths):
@@ -556,14 +699,14 @@ def _extract_tech_stack_from_readme(readme_text: str) -> list:
         if lowered not in TECH_STACK_SECTION_NAMES:
             continue
 
-        for candidate in lines[index + 1 : index + 12]:
+        for candidate in lines[index + 1 : index + 24]:
             candidate_stripped = candidate.strip()
             if not candidate_stripped:
-                if collected:
-                    break
                 continue
-            if candidate_stripped.startswith("#"):
+            if candidate_stripped.startswith(("## ", "# ")):
                 break
+            if candidate_stripped.startswith("###"):
+                continue
 
             cleaned = _clean_markdown(candidate_stripped)
             if ":" in cleaned:
@@ -580,12 +723,7 @@ def _extract_tech_stack_from_readme(readme_text: str) -> list:
 
     normalized = []
     for token in collected:
-        lower = token.lower()
-        mapped = None
-        for pattern, label in TECH_STACK_PATTERNS.items():
-            if _pattern_in_text(pattern, lower):
-                mapped = label
-                break
+        mapped = _normalize_stack_token(token)
         normalized.append(mapped or token)
 
     return _dedupe_preserve_order(normalized)
@@ -596,6 +734,9 @@ def _finalize_tech_stack(stack: list[str]) -> list[str]:
 
     if "TypeScript" in stack and "JavaScript" in stack:
         stack = [item for item in stack if item != "JavaScript"]
+
+    priority_index = {name: index for index, name in enumerate(TECH_STACK_PRIORITY)}
+    stack = sorted(stack, key=lambda item: (priority_index.get(item, 10_000), stack.index(item)))
 
     core_stack = [item for item in stack if item in CORE_TECH_STACKS]
     secondary_stack = [item for item in stack if item in SECONDARY_TECH_STACKS]
@@ -636,10 +777,9 @@ def _extract_tech_stack_from_manifests(file_contents: dict) -> list:
                 if not isinstance(section, dict):
                     continue
                 for dependency_name in section.keys():
-                    dependency_lower = dependency_name.lower()
-                    for pattern, label in TECH_STACK_PATTERNS.items():
-                        if _pattern_in_text(pattern, dependency_lower):
-                            stack.append(label)
+                    mapped = _normalize_stack_token(dependency_name)
+                    if mapped:
+                        stack.append(mapped)
 
         if lowered_path.endswith("requirements.txt"):
             for line in content.splitlines():
@@ -647,14 +787,16 @@ def _extract_tech_stack_from_manifests(file_contents: dict) -> list:
                 if not package_name or package_name.startswith("#"):
                     continue
                 package_name = re.split(r"[<>=~!]", package_name)[0].strip()
-                for pattern, label in TECH_STACK_PATTERNS.items():
-                    if _pattern_in_text(pattern, package_name):
-                        stack.append(label)
+                mapped = _normalize_stack_token(package_name)
+                if mapped:
+                    stack.append(mapped)
 
-        if lowered_path.endswith((".py", ".ipynb", ".js", ".jsx", ".ts", ".tsx")):
-            for pattern, label in TECH_STACK_PATTERNS.items():
-                if _pattern_in_text(pattern, lowered_content):
-                    stack.append(label)
+        if lowered_path.endswith((".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")):
+            imports = _extract_source_imports(content, lowered_path)
+            for imported in imports:
+                mapped = _normalize_stack_token(imported)
+                if mapped:
+                    stack.append(mapped)
 
     return _dedupe_preserve_order(stack)
 
@@ -671,7 +813,6 @@ def _extract_tech_stack_from_paths(lower_paths: list[str]) -> list:
         ("dockerfile", "Docker"),
         ("streamlit", "Streamlit"),
         ("requirements.txt", "Python"),
-        ("package.json", "Node.js"),
         (".tsx", "React"),
         (".jsx", "React"),
     ]
@@ -697,9 +838,12 @@ def _summarize_structure(paths: list) -> list:
 
 def _infer_features(paths: list, combined_text: str, file_contents: dict) -> list:
     features = []
+    readme_text = _find_readme_text(file_contents).lower()
+    path_text = "\n".join(paths).lower()
+    evidence_text = "\n".join([readme_text, path_text])
 
     for patterns, sentence in FEATURE_RULES:
-        if any(_pattern_in_text(pattern, combined_text) for pattern in patterns) and sentence not in features:
+        if any(_pattern_in_text(pattern, evidence_text) for pattern in patterns) and sentence not in features:
             features.append(sentence)
 
     if any(path.lower().endswith(".ipynb") for path in paths):
@@ -708,17 +852,17 @@ def _infer_features(paths: list, combined_text: str, file_contents: dict) -> lis
         features.append("모델 학습이나 실험 자동화를 위한 스크립트가 포함되어 있습니다.")
     if any(path.lower().endswith(".csv") for path in paths):
         features.append("분석용 데이터셋이나 전처리 결과물이 저장소에 포함되어 있습니다.")
-    if "streamlit" in _find_content_by_suffix(file_contents, "requirements.txt").lower():
+    if "streamlit" in _find_content_by_suffix(file_contents, "requirements.txt").lower() or "streamlit" in evidence_text:
         features.append("브라우저에서 예측 결과를 확인할 수 있는 Streamlit 화면 구성이 포함되어 있습니다.")
-    if "jwt" in combined_text or "authorization" in combined_text or "bearer" in combined_text:
+    if "jwt" in evidence_text or "authorization" in evidence_text or "bearer" in evidence_text:
         features.append("JWT 또는 토큰 기반 인증 흐름이 구현되어 있습니다.")
-    if "sqlalchemy" in combined_text:
+    if "sqlalchemy" in evidence_text:
         features.append("SQLAlchemy 기반 데이터 모델과 데이터베이스 연동 구성이 포함되어 있습니다.")
     if "pytest" in combined_text or any("test" in path.lower() for path in paths):
         features.append("단위 테스트 또는 검증용 테스트 코드가 포함되어 있습니다.")
-    if "docker" in combined_text or any("docker" in path.lower() for path in paths):
+    if any("docker" in path.lower() for path in paths):
         features.append("Docker 기반 개발 또는 실행 환경 구성이 포함되어 있습니다.")
-    if "health" in combined_text:
+    if "health" in evidence_text:
         features.append("시스템 상태를 점검하기 위한 헬스체크 또는 상태 확인 기능이 포함되어 있습니다.")
 
     return _dedupe_preserve_order(features)[:8]

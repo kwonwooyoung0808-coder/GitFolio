@@ -53,9 +53,13 @@ export default function ReportPreview({ report }) {
             <span className="soft-badge bg-emerald-100 text-emerald-800">
               {report.mode === 'free' ? '규칙 기반 초안' : report.mode === 'local-llm' ? '로컬 LLM 초안' : '클라우드 LLM 초안'}
             </span>
-            {report.repo?.full_name && <span className="soft-badge bg-slate-100 text-slate-700">{report.repo.full_name}</span>}
+            {report.repo?.full_name && (
+              <span className="soft-badge max-w-full break-all whitespace-normal bg-slate-100 text-slate-700">
+                {report.repo.full_name}
+              </span>
+            )}
           </div>
-          <h2 className="text-3xl font-black tracking-[-0.04em] text-slate-950">{report.project_name}</h2>
+          <h2 className="break-all text-3xl font-black tracking-[-0.04em] text-slate-950">{report.project_name}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
             {report.summary || report.repo?.description || '저장소 구조와 핵심 구현 파일을 바탕으로 이력서용 초안을 정리했습니다.'}
           </p>

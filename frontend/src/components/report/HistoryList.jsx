@@ -4,8 +4,16 @@ export default function HistoryList({ reports }) {
   if (!reports.length) {
     return (
       <div className="section-card text-center">
-        <p className="text-lg font-bold tracking-[-0.03em] text-slate-900">아직 저장된 분석 결과가 없습니다</p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">먼저 분석 화면에서 저장소를 분석하면 결과가 여기에 쌓입니다.</p>
+        <p className="text-lg font-bold tracking-[-0.03em] text-slate-900">아직 저장된 데이터가 없습니다</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          분석 시작 화면에서 저장소를 분석하면 결과가 이곳에 저장됩니다.
+        </p>
+        <Link
+          to="/analyze"
+          className="mt-5 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          분석 시작으로 이동
+        </Link>
       </div>
     )
   }
