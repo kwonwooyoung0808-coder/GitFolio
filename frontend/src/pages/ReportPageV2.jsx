@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
-import { fetchReport, updateReportMeta } from '../api/reportApi'
+import { deleteReport, fetchReport, updateReportMeta } from '../api/reportApi'
 import BackButton from '../components/common/BackButton'
 import ErrorToast from '../components/common/ErrorToast'
 import HeaderV2 from '../components/common/HeaderV2'
@@ -12,11 +12,13 @@ import { useAuthV2 } from '../hooks/useAuthV2'
 
 export default function ReportPageV2() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { token } = useAuthV2()
   const [report, setReport] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [savingMeta, setSavingMeta] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -46,12 +48,35 @@ export default function ReportPageV2() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!report) return
+    const confirmed = window.confirm(`"${report.content?.project_name || '이 보고서'}"를 삭제할까요?\n삭제 후에는 복구할 수 없습니다.`)
+    if (!confirmed) return
+
+    try {
+      setDeleting(true)
+      await deleteReport(id, token)
+      navigate('/history')
+    } catch (deleteError) {
+      setError(deleteError.message)
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen">
       <HeaderV2 />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <BackButton fallback="/analyze" />
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deleting ? '삭제 중...' : '보고서 삭제'}
+          </button>
         </div>
 
         <div className="mb-8 rounded-[28px] border border-slate-200 bg-white/90 px-8 py-8 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.28)]">

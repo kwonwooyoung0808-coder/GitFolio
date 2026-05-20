@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { fetchReports } from '../api/reportApi'
+import { deleteReport, fetchReports } from '../api/reportApi'
 import BackButton from '../components/common/BackButton'
 import ErrorToast from '../components/common/ErrorToast'
 import HeaderV2 from '../components/common/HeaderV2'
@@ -14,6 +14,7 @@ export default function HistoryPageV2() {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -36,6 +37,22 @@ export default function HistoryPageV2() {
 
     load()
   }, [token])
+
+  const handleDelete = async (report) => {
+    const confirmed = window.confirm(`"${report.project_name}" 보고서를 삭제할까요?\n삭제 후에는 복구할 수 없습니다.`)
+    if (!confirmed) return
+
+    try {
+      setDeletingId(report.id)
+      await deleteReport(report.id, token)
+      setReports((prev) => prev.filter((item) => item.id !== report.id))
+      setError('')
+    } catch (deleteError) {
+      setError(deleteError.message || '보고서를 삭제하지 못했습니다.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <div className="min-h-screen">
@@ -73,7 +90,7 @@ export default function HistoryPageV2() {
           </div>
         ) : (
           <div id="history-list">
-            <HistoryList reports={reports} />
+            <HistoryList reports={reports} deletingId={deletingId} onDelete={handleDelete} />
           </div>
         )}
 

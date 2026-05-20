@@ -137,6 +137,34 @@ async def update_report_detail(
     }
 
 
+@router.delete("/{report_id}")
+async def delete_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    report, request_row = _get_owned_report(db, report_id, current_user["github_id"])
+
+    for candidate in [report.pdf_path, report.docx_path]:
+        if not candidate:
+            continue
+        file_path = Path(candidate)
+        if file_path.exists():
+            try:
+                file_path.unlink()
+            except OSError:
+                pass
+
+    db.delete(report)
+    db.commit()
+
+    return {
+        "ok": True,
+        "deleted_report_id": report_id,
+        "request_id": request_row.id,
+    }
+
+
 @router.get("/{report_id}/download")
 async def download_report(
     report_id: int,

@@ -56,3 +56,12 @@ export async function updateReportMeta(reportId, payload, token) {
     throw toReadableError(error)
   }
 }
+
+export async function deleteReport(reportId, token) {
+  try {
+    const response = await api.delete(`/reports/${reportId}`, authHeaders(token))
+    return response.data
+  } catch (error) {
+    throw toReadableError(error)
+  }
+}

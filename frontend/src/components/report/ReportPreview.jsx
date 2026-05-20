@@ -33,6 +33,14 @@ export default function ReportPreview({ report, onMetaSave, savingMeta = false }
     await navigator.clipboard.writeText(report.copy_prompt)
   }
 
+  const moveToSection = (href) => {
+    if (typeof window === 'undefined') return
+    const target = document.querySelector(href)
+    if (!target) return
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    window.history.replaceState(null, '', href)
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
@@ -40,13 +48,14 @@ export default function ReportPreview({ report, onMetaSave, savingMeta = false }
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-700">Report Menu</p>
           <div className="mt-4 grid gap-2">
             {sectionLinks.map((item) => (
-              <a
+              <button
                 key={item.href}
-                href={item.href}
+                type="button"
+                onClick={() => moveToSection(item.href)}
                 className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-800"
               >
                 {item.label}
-              </a>
+              </button>
             ))}
           </div>
         </div>
