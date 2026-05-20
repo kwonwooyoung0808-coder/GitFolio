@@ -24,7 +24,7 @@ from app.services.llm.claude_client import ClaudeClient
 from app.services.llm.ollama_client import OllamaClient
 from app.services.llm.prompt_builder import build_prompt
 from app.services.report.docx_generator import generate_docx
-from app.services.report.formatter import build_free_report, format_local_llm_report
+from app.services.report.formatter import apply_manual_fields, build_free_report, format_local_llm_report
 from app.services.report.pdf_generator import generate_pdf
 from app.utils.file_storage import build_report_paths
 from app.utils.sse import sse_event
@@ -223,6 +223,13 @@ async def analyze_stream(
             if report_content is None:
                 yield sse_event("status", "Building a rule-based starter draft.")
                 report_content = build_free_report(repo_info, my_commits, diff_summary, prompt, repo_profile)
+
+            report_content = apply_manual_fields(
+                report_content,
+                period=req.period,
+                scale=req.scale,
+                role=req.role,
+            )
 
             preview_chunks = [
                 "GitFolio prepared your portfolio draft.\n\n",

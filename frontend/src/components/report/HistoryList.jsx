@@ -1,5 +1,25 @@
 import { Link } from 'react-router-dom'
 
+function formatSeoulDateTime(value) {
+  if (!value) return ''
+
+  const normalizedValue =
+    typeof value === 'string' && !/(Z|[+-]\d{2}:\d{2})$/i.test(value)
+      ? `${value}Z`
+      : value
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(new Date(normalizedValue))
+}
+
 export default function HistoryList({ reports }) {
   if (!reports.length) {
     return (
@@ -34,7 +54,7 @@ export default function HistoryList({ reports }) {
               <h2 className="text-xl font-bold tracking-[-0.03em] text-slate-950">{report.project_name}</h2>
               <p className="mt-2 text-sm text-slate-500">{report.repo_name}</p>
             </div>
-            <div className="text-sm text-slate-400">{new Date(report.created_at).toLocaleString()}</div>
+            <div className="text-sm text-slate-400">{formatSeoulDateTime(report.created_at)}</div>
           </div>
         </Link>
       ))}

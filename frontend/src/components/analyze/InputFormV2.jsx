@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { getAnalyzeStreamUrl } from '../../api/analyzeApi'
@@ -8,9 +8,9 @@ import Button from '../common/Button'
 import ErrorToast from '../common/ErrorToast'
 
 const guideItems = [
-  '본인 커밋이 실제로 있는 공개 저장소부터 테스트하면 결과 확인이 쉽습니다.',
-  '분석 중에는 커밋 수집, 핵심 파일 읽기, 초안 생성 순서로 상태가 바뀝니다.',
-  '완료되면 결과 페이지로 자동 이동하며 초안과 DOCX 다운로드를 볼 수 있습니다.',
+  '본인 커밋이 실제로 포함된 공개 저장소로 테스트하면 결과를 확인하기 좋습니다.',
+  '분석 중에는 커밋 수집, 핵심 파일 확인, 초안 생성 순서로 상태가 바뀝니다.',
+  '완료되면 결과 페이지로 자동 이동하고 초안과 DOCX 다운로드를 확인할 수 있습니다.',
 ]
 
 export default function InputFormV2() {
@@ -18,6 +18,10 @@ export default function InputFormV2() {
   const { token, user } = useAuthV2()
   const { repoUrl, githubIdentity, setGithubIdentity, setRepoUrl, status, content, result, error, isDone, startStream } =
     useAnalyzeStream()
+
+  const [period, setPeriod] = useState('')
+  const [scale, setScale] = useState('')
+  const [role, setRole] = useState('')
 
   useEffect(() => {
     if (user?.github_username && !githubIdentity) {
@@ -40,7 +44,17 @@ export default function InputFormV2() {
 
   const handleSubmit = async () => {
     try {
-      await startStream(getAnalyzeStreamUrl(), { repo_url: repoUrl, github_identity: githubIdentity }, token)
+      await startStream(
+        getAnalyzeStreamUrl(),
+        {
+          repo_url: repoUrl,
+          github_identity: githubIdentity,
+          period,
+          scale,
+          role,
+        },
+        token,
+      )
     } catch (streamError) {
       console.error(streamError)
     }
@@ -75,6 +89,36 @@ export default function InputFormV2() {
               placeholder="본인 GitHub username 또는 numeric id"
               value={githubIdentity}
               onChange={(event) => setGithubIdentity(event.target.value)}
+            />
+          </label>
+
+          <label className="field-shell block">
+            <span className="field-label">업무 기간</span>
+            <input
+              className="field-input"
+              placeholder="예: 2026.04 ~ 2026.05"
+              value={period}
+              onChange={(event) => setPeriod(event.target.value)}
+            />
+          </label>
+
+          <label className="field-shell block">
+            <span className="field-label">개발 인원</span>
+            <input
+              className="field-input"
+              placeholder="예: 1명 / 6명 / 개인 프로젝트"
+              value={scale}
+              onChange={(event) => setScale(event.target.value)}
+            />
+          </label>
+
+          <label className="field-shell block">
+            <span className="field-label">담당 역할</span>
+            <textarea
+              className="field-input min-h-[96px] resize-y"
+              placeholder="예: OCR 분석 기능 구현, 결과 저장 API 개발"
+              value={role}
+              onChange={(event) => setRole(event.target.value)}
             />
           </label>
         </div>
@@ -116,24 +160,6 @@ export default function InputFormV2() {
               </li>
             ))}
           </ol>
-        </section>
-
-        <section className="section-card">
-          <h3 className="section-title">화면 이동 메뉴</h3>
-          <div className="mt-4 grid gap-3">
-            <a
-              href="#analyze-form"
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-800"
-            >
-              입력 폼으로 이동
-            </a>
-            <a
-              href="#analyze-guide"
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-800"
-            >
-              가이드 다시 보기
-            </a>
-          </div>
         </section>
       </aside>
     </div>

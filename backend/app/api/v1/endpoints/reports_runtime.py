@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -11,8 +12,16 @@ from app.db.session import get_db
 from app.models.analysis_request import AnalysisRequest
 from app.models.report import Report
 from app.models.user import User
+from app.services.report.docx_generator import generate_docx
+from app.services.report.formatter import apply_manual_fields
 
 router = APIRouter()
+
+
+class ReportMetaUpdateRequest(BaseModel):
+    period: str | None = None
+    scale: str | None = None
+    role: str | None = None
 
 
 def _get_user(db: Session, github_id: str) -> User:
@@ -88,6 +97,41 @@ async def get_report_detail(
         "repo_name": content.get("repo", {}).get("full_name", request_row.repo_url),
         "created_at": report.created_at.isoformat(),
         "content": content,
+        "pdf_available": settings.ENABLE_PDF and bool(report.pdf_path),
+        "docx_available": bool(report.docx_path),
+    }
+
+
+@router.patch("/{report_id}")
+async def update_report_detail(
+    report_id: int,
+    payload: ReportMetaUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    report, request_row = _get_owned_report(db, report_id, current_user["github_id"])
+    content = json.loads(report.content_json)
+    updated_content = apply_manual_fields(
+        content,
+        period=payload.period,
+        scale=payload.scale,
+        role=payload.role,
+    )
+    report.content_json = json.dumps(updated_content, ensure_ascii=False)
+
+    if report.docx_path:
+        generate_docx(updated_content, report.docx_path)
+
+    db.commit()
+    db.refresh(report)
+
+    return {
+        "id": report.id,
+        "request_id": report.request_id,
+        "project_name": updated_content.get("project_name", "GitFolio Report"),
+        "repo_name": updated_content.get("repo", {}).get("full_name", request_row.repo_url),
+        "created_at": report.created_at.isoformat(),
+        "content": updated_content,
         "pdf_available": settings.ENABLE_PDF and bool(report.pdf_path),
         "docx_available": bool(report.docx_path),
     }

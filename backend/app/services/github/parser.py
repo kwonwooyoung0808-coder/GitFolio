@@ -549,11 +549,13 @@ def _extract_summary_from_readme(readme_text: str) -> str:
 def _extract_feature_highlights(readme_text: str, fallback_features: list) -> list:
     lines = [line.rstrip() for line in readme_text.splitlines()]
     highlights = []
+    explicit_feature_section = False
 
     for index, raw_line in enumerate(lines):
         stripped = raw_line.strip()
         lowered = stripped.lstrip("#").strip().lower()
         if lowered in {"features", "feature", "main features", "주요 기능", "기능", "핵심 기능"}:
+            explicit_feature_section = True
             for candidate in lines[index + 1 : index + 8]:
                 cleaned = _clean_markdown(candidate)
                 if not cleaned:
@@ -566,14 +568,17 @@ def _extract_feature_highlights(readme_text: str, fallback_features: list) -> li
                     highlights.append(cleaned)
             break
 
-    if not highlights:
+    if not highlights and fallback_features:
+        highlights = fallback_features[:4]
+
+    if not highlights and explicit_feature_section:
         table_rows = []
         for raw_line in lines:
             stripped = raw_line.strip()
             if not stripped.startswith("|"):
                 continue
             cleaned = _normalize_markdown_table_row(stripped)
-            if cleaned:
+            if cleaned and not _is_noise_line(cleaned):
                 table_rows.append(cleaned)
         highlights = table_rows[:4]
 
@@ -586,6 +591,17 @@ def _extract_feature_highlights(readme_text: str, fallback_features: list) -> li
                 if not _is_noise_line(cleaned):
                     bullet_lines.append(cleaned)
         highlights = bullet_lines[:4]
+
+    if not highlights:
+        table_rows = []
+        for raw_line in lines:
+            stripped = raw_line.strip()
+            if not stripped.startswith("|"):
+                continue
+            cleaned = _normalize_markdown_table_row(stripped)
+            if cleaned and not _is_noise_line(cleaned):
+                table_rows.append(cleaned)
+        highlights = table_rows[:4]
 
     if not highlights:
         highlights = fallback_features[:4]
@@ -967,6 +983,10 @@ def _is_noise_line(text: str) -> bool:
         "시작하기",
         "포트",
         "권장",
+        "fail closed",
+        "기밀 유출",
+        "도입을 추진",
+        "리스크",
     )
     if any(token in lowered for token in noisy_tokens):
         return True

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import Button from '../common/Button'
 
 const sectionLinks = [
@@ -5,11 +7,21 @@ const sectionLinks = [
   { href: '#section-tech', label: '기술 스택' },
   { href: '#section-details', label: '상세 내용' },
   { href: '#section-draft', label: '이력서용 초안' },
-  { href: '#section-prompt', label: '외부 AI용 프롬프트' },
+  { href: '#section-prompt', label: '외부 AI 전달용 프롬프트' },
 ]
 
-export default function ReportPreview({ report }) {
+export default function ReportPreview({ report, onMetaSave, savingMeta = false }) {
   if (!report) return null
+
+  const [period, setPeriod] = useState(toEditableValue(report.period))
+  const [scale, setScale] = useState(toEditableValue(report.scale))
+  const [role, setRole] = useState(toEditableValue(report.role))
+
+  useEffect(() => {
+    setPeriod(toEditableValue(report.period))
+    setScale(toEditableValue(report.scale))
+    setRole(toEditableValue(report.role))
+  }, [report.period, report.scale, report.role])
 
   const copyDraft = async () => {
     if (!report.raw_text) return
@@ -60,14 +72,24 @@ export default function ReportPreview({ report }) {
             )}
           </div>
           <h2 className="break-all text-3xl font-black tracking-[-0.04em] text-slate-950">{report.project_name}</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            {report.summary || report.repo?.description || '저장소 구조와 핵심 구현 파일을 바탕으로 이력서용 초안을 정리했습니다.'}
-          </p>
         </div>
 
-        <InfoCard title="업무 기간" value={report.period} />
-        <InfoCard title="개발 인원" value={report.scale} />
-        <InfoCard title="담당 역할" value={report.role} multiline />
+        <EditableInfoCard title="업무 기간" value={period} placeholder="예: 2026.04 ~ 2026.05" onChange={setPeriod} />
+        <EditableInfoCard title="개발 인원" value={scale} placeholder="예: 1명 / 6명 / 개인 프로젝트" onChange={setScale} />
+        <EditableInfoCard
+          title="담당 역할"
+          value={role}
+          placeholder="예: OCR 분석 기능 구현, 결과 저장 API 개발"
+          multiline
+          onChange={setRole}
+        />
+        <Button
+          className="w-full px-4 py-3"
+          onClick={() => onMetaSave?.({ period, scale, role })}
+          disabled={savingMeta}
+        >
+          {savingMeta ? '수정 반영 중...' : '수정 반영'}
+        </Button>
       </aside>
 
       <section className="space-y-6">
@@ -111,7 +133,7 @@ export default function ReportPreview({ report }) {
               <div>
                 <h3 className="section-title">외부 AI 전달용 프롬프트</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  이력서용 초안을 더 자연스럽게 다듬고 싶을 때 ChatGPT, Claude와 같은 외부 AI에 붙여 넣는 입력문입니다.
+                  이력서용 초안을 더 자연스럽게 다듬고 싶을 때 ChatGPT, Claude 같은 외부 AI에 붙여 넣는 입력문입니다.
                   이력서에 직접 제출하는 내용이 아니라, 외부 AI에게 재작성이나 문장 보완을 요청할 때 사용합니다.
                 </p>
               </div>
@@ -119,7 +141,7 @@ export default function ReportPreview({ report }) {
                 프롬프트 복사
               </Button>
             </div>
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded-[20px] border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-700">
+            <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-[20px] border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-700">
               {report.copy_prompt}
             </pre>
           </div>
@@ -152,4 +174,37 @@ function InfoCard({ title, value, multiline = false }) {
       <p className={`mt-3 text-sm leading-7 text-slate-700 ${multiline ? 'whitespace-pre-wrap' : ''}`}>{value}</p>
     </div>
   )
+}
+
+function EditableInfoCard({ title, value, onChange, placeholder = '', multiline = false }) {
+  return (
+    <div className="section-card">
+      <h3 className="section-title">{title}</h3>
+      {multiline ? (
+        <textarea
+          className="mt-3 min-h-[120px] w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-700 focus:border-sky-300 focus:outline-none focus:ring-4 focus:ring-sky-100"
+          value={value || ''}
+          placeholder={placeholder}
+          onChange={(event) => onChange?.(event.target.value)}
+        />
+      ) : (
+        <input
+          className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-700 focus:border-sky-300 focus:outline-none focus:ring-4 focus:ring-sky-100"
+          value={value || ''}
+          placeholder={placeholder}
+          onChange={(event) => onChange?.(event.target.value)}
+        />
+      )}
+    </div>
+  )
+}
+
+function toEditableValue(value) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+  if (text.includes('직접 입력')) return ''
+  if (text.includes('실제 프로젝트 진행 기간')) return ''
+  if (text.includes('팀 프로젝트인지 개인 프로젝트인지')) return ''
+  if (text.includes('실제 맡은 역할')) return ''
+  return text
 }

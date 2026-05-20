@@ -196,6 +196,20 @@ def build_free_report(repo_info: dict, my_commits: list, commit_summary: dict, p
     return report
 
 
+def apply_manual_fields(report: dict, *, period: str | None = None, scale: str | None = None, role: str | None = None) -> dict:
+    if period is not None and str(period).strip():
+        report["period"] = str(period).strip()
+    if scale is not None and str(scale).strip():
+        report["scale"] = str(scale).strip()
+    if role is not None and str(role).strip():
+        report["role"] = str(role).strip()
+
+    base_prompt = report.get("generation_prompt") or report.get("copy_prompt", "")
+    report["copy_prompt"] = _append_manual_info_to_prompt(base_prompt, report)
+    report["raw_text"] = _build_resume_text(report)
+    return report
+
+
 def _sanitize_unverified_fields(raw_text: str) -> str:
     text = raw_text
     text = re.sub(r"(\[개발 기간\]\s*\n)(.*?)(?=\n\[|\Z)", r"\1직접 입력 필요\n", text, flags=re.DOTALL)
@@ -343,6 +357,32 @@ def _build_resume_text(report: dict) -> str:
     return "\n".join(lines).strip()
 
 
+def _append_manual_info_to_prompt(prompt: str, report: dict) -> str:
+    base = _strip_manual_info_prompt_block(prompt).rstrip()
+    manual_lines = []
+
+    if report.get("period") and report.get("period") != PLACEHOLDER_PERIOD:
+        manual_lines.append(f"- 업무 기간: {report['period']}")
+    if report.get("scale") and report.get("scale") != PLACEHOLDER_SCALE:
+        manual_lines.append(f"- 개발 인원: {report['scale']}")
+    if report.get("role") and report.get("role") != PLACEHOLDER_ROLE:
+        manual_lines.append(f"- 담당 역할: {report['role']}")
+
+    if not manual_lines:
+        return base
+
+    return (
+        f"{base}\n\n=== 사용자 직접 입력 정보 ===\n"
+        + "\n".join(manual_lines)
+        + "\n- 위 항목은 사용자가 직접 입력한 정보이므로 결과 문장에 자연스럽게 반영하세요."
+    ).strip()
+
+
+def _strip_manual_info_prompt_block(prompt: str) -> str:
+    text = str(prompt or "")
+    return re.sub(r"\n*=== 사용자 직접 입력 정보 ===.*$", "", text, flags=re.DOTALL).strip()
+
+
 def _summary_to_main_task(summary_source: str) -> str:
     text = str(summary_source).strip()
     if not text:
@@ -407,6 +447,46 @@ def _summary_to_detail_sentence(summary_source: str) -> str:
     return text + " 서비스를 구현하였습니다."
 
 
+def _is_background_summary(summary_source: str) -> bool:
+    text = str(summary_source).strip()
+    if not text:
+        return False
+
+    background_signals = [
+        "이후",
+        "필요",
+        "필요합니다",
+        "추진",
+        "도입",
+        "확산",
+        "리스크",
+        "시장",
+        "배경",
+        "문제",
+        "사고",
+        "대기업",
+        "%",
+    ]
+    product_signals = [
+        "서비스",
+        "시스템",
+        "플랫폼",
+        "앱",
+        "웹",
+        "대시보드",
+        "분석",
+        "생성",
+        "예측",
+        "추천",
+        "구현",
+    ]
+
+    has_background = any(signal in text for signal in background_signals)
+    has_product = any(signal in text for signal in product_signals)
+
+    return has_background and has_product and not text.endswith("서비스입니다.") and not text.endswith("플랫폼입니다.")
+
+
 def _build_main_task(repo_profile: dict) -> str:
     project_type = repo_profile.get("project_type", "프로젝트")
     summary_source = repo_profile.get("summary_source", "")
@@ -416,7 +496,7 @@ def _build_main_task(repo_profile: dict) -> str:
     concrete_highlights = _get_concrete_feature_highlights(repo_profile)
 
     summary_task = _summary_to_main_task(summary_source)
-    if summary_task:
+    if summary_task and not _is_background_summary(summary_source):
         return summary_task
 
     if concrete_highlights:
@@ -489,7 +569,7 @@ def _build_details(commit_summary: dict, repo_profile: dict) -> str:
     concrete_highlights = _get_concrete_feature_highlights(repo_profile)
 
     summary_sentence = _summary_to_detail_sentence(summary_source)
-    if summary_sentence:
+    if summary_sentence and not _is_background_summary(summary_source):
         sentences.append(summary_sentence)
 
     top_file_names = [item.get("filename", "").lower() for item in commit_summary.get("top_files", [])]

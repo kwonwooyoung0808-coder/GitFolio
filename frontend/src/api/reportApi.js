@@ -47,3 +47,12 @@ export async function fetchReport(reportId, token) {
     throw toReadableError(error)
   }
 }
+
+export async function updateReportMeta(reportId, payload, token) {
+  try {
+    const response = await api.patch(`/reports/${reportId}`, payload, authHeaders(token))
+    return response.data
+  } catch (error) {
+    throw toReadableError(error)
+  }
+}

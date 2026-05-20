@@ -43,17 +43,11 @@ export default function HistoryPageV2() {
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <BackButton fallback="/" />
-          <a
-            href="#history-list"
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-800"
-          >
-            목록으로 이동
-          </a>
         </div>
 
         <div className="mb-8 rounded-[28px] border border-slate-200 bg-white/90 px-8 py-8 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.28)]">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-700">Saved History</p>
-          <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-slate-950">저장한 분석 이력</h1>
+          <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-slate-950">저장된 분석 이력</h1>
           <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
             이전에 만든 초안과 프롬프트를 다시 확인하고, 저장된 결과 문서를 이어서 검토할 수 있습니다.
           </p>
@@ -61,7 +55,7 @@ export default function HistoryPageV2() {
 
         {!isLoggedIn ? (
           <div className="section-card text-center" id="history-list">
-            <p className="text-lg font-bold tracking-[-0.03em] text-slate-900">로그인이 필요합니다</p>
+            <p className="text-lg font-bold tracking-[-0.03em] text-slate-900">로그인이 필요합니다.</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               저장 이력은 로그인한 사용자 기준으로 불러옵니다. GitHub 로그인 후 바로 확인해보세요.
             </p>
@@ -91,10 +85,7 @@ export default function HistoryPageV2() {
 
         {!isLoggedIn ? (
           <div className="mt-6 text-center">
-            <Link
-              to="/"
-              className="text-sm font-semibold text-slate-500 transition hover:text-slate-700"
-            >
+            <Link to="/" className="text-sm font-semibold text-slate-500 transition hover:text-slate-700">
               홈으로 이동
             </Link>
           </div>

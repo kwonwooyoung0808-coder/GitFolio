@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-import { fetchReport } from '../api/reportApi'
+import { fetchReport, updateReportMeta } from '../api/reportApi'
 import BackButton from '../components/common/BackButton'
 import ErrorToast from '../components/common/ErrorToast'
 import HeaderV2 from '../components/common/HeaderV2'
@@ -16,6 +16,7 @@ export default function ReportPageV2() {
   const [report, setReport] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [savingMeta, setSavingMeta] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -32,39 +33,33 @@ export default function ReportPageV2() {
     if (token) load()
   }, [id, token])
 
+  const handleMetaSave = async (payload) => {
+    try {
+      setSavingMeta(true)
+      const updated = await updateReportMeta(id, payload, token)
+      setReport(updated)
+      setError('')
+    } catch (updateError) {
+      setError(updateError.message)
+    } finally {
+      setSavingMeta(false)
+    }
+  }
+
   return (
     <div className="min-h-screen">
       <HeaderV2 />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <BackButton fallback="/analyze" />
-          <div className="flex flex-wrap gap-2">
-            <a
-              href="#report-summary"
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-800"
-            >
-              요약
-            </a>
-            <a
-              href="#report-sections"
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-800"
-            >
-              본문
-            </a>
-            <a
-              href="#report-actions"
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-800"
-            >
-              다운로드
-            </a>
-          </div>
         </div>
 
         <div className="mb-8 rounded-[28px] border border-slate-200 bg-white/90 px-8 py-8 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.28)]">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-700">Saved Report</p>
           <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-slate-950">분석 결과 보고서</h1>
           <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-            저장소를 분석해 만든 프로젝트 설명 초안입니다. 시연용 결과이므로 실제 제출 전에는 사용자가 직접 문장을 검토하고 수정하는 것을 권장합니다.
+            저장소를 분석해 만든 프로젝트 설명 초안입니다. 실제 제출 전에는 프로젝트 맥락에 맞게 기간, 인원, 담당 역할과
+            문장을 한 번 더 검토하는 것을 권장합니다.
           </p>
         </div>
 
@@ -74,12 +69,14 @@ export default function ReportPageV2() {
         {report && (
           <div className="space-y-6">
             <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-6 py-5 text-sm leading-7 text-amber-900 shadow-sm">
-              <p className="font-bold">무료 버전 안내</p>
+              <p className="font-bold">초안 사용 안내</p>
               <p className="mt-2">
-                이 결과는 자동 생성된 시연용 초안입니다. 저장소 구조와 핵심 파일을 기반으로 만들지만, 프로젝트 설명이나 기능 정리가 완전히 정확하지 않을 수 있습니다.
+                이 결과는 자동 생성된 초안입니다. 저장소 구조와 구현 파일을 기준으로 만들지만 프로젝트 설명이나 역할은 직접
+                확인해 다듬는 것이 안전합니다.
               </p>
               <p className="mt-2">
-                특히 <strong>개발 기간</strong>, <strong>팀 규모</strong>, <strong>담당 역할</strong>은 사용자가 직접 확인해 수정해야 합니다.
+                아래 왼쪽 입력 칸에서 <strong>업무 기간</strong>, <strong>개발 인원</strong>, <strong>담당 역할</strong>
+                을 수정하면 초안과 외부 AI 전달용 프롬프트에 바로 반영됩니다.
               </p>
             </div>
 
@@ -96,19 +93,23 @@ export default function ReportPageV2() {
                       : '규칙 기반 결과'}
                 </span>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                  GitFolio가 저장소를 분석해 초안과 복사용 프롬프트를 정리한 상태입니다. 바로 제출하기보다 프로젝트 맥락에 맞게 한 번 더 다듬어 사용하는 것을 권장합니다.
+                  GitFolio가 저장소를 분석해 초안과 복사용 프롬프트를 정리한 상태입니다. 문장 품질을 더 높이고 싶다면 외부
+                  AI 전달용 프롬프트를 활용해 다듬을 수 있습니다.
                 </p>
               </div>
-              <DownloadButtons
-                reportId={report.id}
-                token={token}
-                pdfAvailable={report.pdf_available}
-                docxAvailable={report.docx_available}
-              />
+              <div className="flex flex-col items-end gap-2">
+                {savingMeta && <p className="text-xs text-slate-500">수정 내용을 저장하는 중입니다...</p>}
+                <DownloadButtons
+                  reportId={report.id}
+                  token={token}
+                  pdfAvailable={report.pdf_available}
+                  docxAvailable={report.docx_available}
+                />
+              </div>
             </div>
 
             <div id="report-sections">
-              <ReportPreview report={report.content} />
+              <ReportPreview report={report.content} onMetaSave={handleMetaSave} savingMeta={savingMeta} />
             </div>
           </div>
         )}
